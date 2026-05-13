@@ -1,0 +1,117 @@
+# ==============================================================
+# Module: search_sort.py
+# Deskripsi: Modul untuk fitur pencarian (Searching) dan
+#            pengurutan (Sorting) data dokumen
+# ==============================================================
+
+
+# ======================== SEARCHING ========================
+
+def search_by_title(documents_list, keyword):
+    """Mencari dokumen berdasarkan judul (case-insensitive).
+
+    Mengembalikan list dokumen yang judulnya mengandung keyword.
+    """
+    keyword_lower = keyword.lower()
+    results = []
+    for doc in documents_list:
+        if keyword_lower in doc.title.lower():
+            results.append(doc)
+    return results
+
+
+def search_by_content(documents_list, keyword):
+    """Mencari dokumen yang kontennya mengandung keyword (case-insensitive).
+
+    Mengembalikan list of tuple (doc, [nomor_baris_yang_cocok]).
+    """
+    keyword_lower = keyword.lower()
+    results = []
+    for doc in documents_list:
+        matching_lines = []
+        for i, line in enumerate(doc.lines):
+            if keyword_lower in line.lower():
+                matching_lines.append(i)
+        if matching_lines:
+            results.append((doc, matching_lines))
+    return results
+
+
+def search_by_id(documents_list, doc_id):
+    """Mencari dokumen berdasarkan ID."""
+    for doc in documents_list:
+        if doc.doc_id == doc_id:
+            return doc
+    return None
+
+
+# ======================== SORTING ========================
+
+def sort_by_title(documents_list, ascending=True):
+    """Mengurutkan dokumen berdasarkan judul (A-Z atau Z-A).
+
+    Menggunakan algoritma Bubble Sort.
+    """
+    docs = list(documents_list)
+    n = len(docs)
+    for i in range(n - 1):
+        swapped = False
+        for j in range(n - 1 - i):
+            if ascending:
+                if docs[j].title.lower() > docs[j + 1].title.lower():
+                    docs[j], docs[j + 1] = docs[j + 1], docs[j]
+                    swapped = True
+            else:
+                if docs[j].title.lower() < docs[j + 1].title.lower():
+                    docs[j], docs[j + 1] = docs[j + 1], docs[j]
+                    swapped = True
+        if not swapped:
+            break
+    return docs
+
+
+def sort_by_date(documents_list, ascending=True, by="created"):
+    """Mengurutkan dokumen berdasarkan tanggal (terlama/terbaru).
+
+    Menggunakan algoritma Selection Sort.
+    Parameter by: 'created' atau 'updated'.
+    """
+    docs = list(documents_list)
+    n = len(docs)
+    for i in range(n - 1):
+        target_idx = i
+        for j in range(i + 1, n):
+            date_j = docs[j].created_at if by == "created" else docs[j].updated_at
+            date_target = docs[target_idx].created_at if by == "created" else docs[target_idx].updated_at
+            if ascending:
+                if date_j < date_target:
+                    target_idx = j
+            else:
+                if date_j > date_target:
+                    target_idx = j
+        if target_idx != i:
+            docs[i], docs[target_idx] = docs[target_idx], docs[i]
+    return docs
+
+
+def sort_by_line_count(documents_list, ascending=True):
+    """Mengurutkan dokumen berdasarkan jumlah baris.
+
+    Menggunakan algoritma Insertion Sort.
+    """
+    docs = list(documents_list)
+    n = len(docs)
+    for i in range(1, n):
+        key = docs[i]
+        key_count = key.get_line_count()
+        j = i - 1
+        if ascending:
+            while j >= 0 and docs[j].get_line_count() > key_count:
+                docs[j + 1] = docs[j]
+                j -= 1
+        else:
+            while j >= 0 and docs[j].get_line_count() < key_count:
+                docs[j + 1] = docs[j]
+                j -= 1
+        docs[j + 1] = key
+    return docs
