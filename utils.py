@@ -5,6 +5,7 @@
 # ==============================================================
 
 
+# Fungsi: Minta input angka dari user, ulangi otomatis jika input tidak valid
 def input_integer(prompt, min_val=None, max_val=None):
     """Meminta input integer dari user dengan validasi.
 
@@ -24,6 +25,7 @@ def input_integer(prompt, min_val=None, max_val=None):
             print("  [!] Input harus berupa angka. Coba lagi.")
 
 
+# Fungsi: Minta input teks yang tidak boleh kosong
 def input_non_empty(prompt):
     """Meminta input string yang tidak boleh kosong."""
     while True:
@@ -33,6 +35,7 @@ def input_non_empty(prompt):
         print("  [!] Input tidak boleh kosong. Coba lagi.")
 
 
+# Fungsi: Minta jawaban ya/tidak dari user (y/n)
 def input_yes_no(prompt):
     """Meminta input ya/tidak (y/n)."""
     while True:
@@ -45,12 +48,14 @@ def input_yes_no(prompt):
             print("  [!] Masukkan 'y' untuk Ya atau 'n' untuk Tidak.")
 
 
+# Fungsi: Bersihkan layar terminal
 def clear_screen():
     """Membersihkan layar terminal."""
     import os
     os.system("cls" if os.name == "nt" else "clear")
 
 
+# Fungsi: Cetak judul halaman dengan bingkai "="
 def print_header(title):
     """Mencetak header dengan format yang rapi."""
     width = 50
@@ -59,11 +64,13 @@ def print_header(title):
     print("=" * width)
 
 
+# Fungsi: Cetak garis pemisah horizontal
 def print_separator(char="-", width=50):
     """Mencetak garis pemisah."""
     print(char * width)
 
 
+# Fungsi: Cetak daftar dokumen dalam format tabel
 def print_document_table(documents):
     """Mencetak daftar dokumen dalam format tabel."""
     if not documents:
@@ -77,6 +84,7 @@ def print_document_table(documents):
         print(f"  {doc.doc_id:<5} {title_display:<25} {doc.get_line_count():<7} {doc.created_at:<20}")
 
 
+# Fungsi: Cetak isi lengkap dokumen beserta nomor baris
 def print_document_content(doc):
     """Mencetak isi dokumen dengan nomor baris."""
     print_header(f"Dokumen: {doc.title}")
@@ -93,6 +101,7 @@ def print_document_content(doc):
     print_separator()
 
 
+# Fungsi: Hentikan program sampai user menekan Enter
 def pause():
     """Menunggu user menekan Enter untuk melanjutkan."""
     input("\n  Tekan Enter untuk melanjutkan...")

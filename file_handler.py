@@ -13,6 +13,7 @@ DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCUMENTS_FILE = os.path.join(DATA_DIR, "documents.csv")
 
 
+# Fungsi: Simpan semua dokumen ke file CSV
 def save_documents(documents_list):
     """Menyimpan daftar dokumen ke file CSV.
 
@@ -39,6 +40,7 @@ def save_documents(documents_list):
         return False, f"Gagal menyimpan data: {e}"
 
 
+# Fungsi: Muat dokumen dari file CSV saat program pertama kali dibuka
 def load_documents():
     """Memuat daftar dokumen dari file CSV.
 
@@ -79,6 +81,7 @@ def load_documents():
         return [], f"Gagal memuat data: {e}"
 
 
+# Fungsi: Ekspor isi satu dokumen ke file TXT
 def export_document_to_txt(doc, filepath=None):
     """Mengekspor satu dokumen ke file TXT."""
     if filepath is None:

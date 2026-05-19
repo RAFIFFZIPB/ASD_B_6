@@ -43,6 +43,7 @@ manager = DocumentManager()
 
 # ======================== MENU UTAMA ========================
 
+# Fungsi: Tampilkan menu utama dalam layout 3 kolom yang dikelompokkan
 def menu_utama():
     """Menampilkan menu utama aplikasi."""
     print_header("EDITOR TEKS SEDERHANA")
@@ -67,6 +68,7 @@ def menu_utama():
 
 # ======================== FITUR 1: BUAT DOKUMEN ========================
 
+# Fungsi: Alur interaktif untuk membuat dokumen baru
 def fitur_buat_dokumen():
     """Membuat dokumen baru (CREATE)."""
     print_header("BUAT DOKUMEN BARU")
@@ -82,6 +84,7 @@ def fitur_buat_dokumen():
 
 # ======================== FITUR 2: LIHAT SEMUA ========================
 
+# Fungsi: Tampilkan semua dokumen dalam format tabel
 def fitur_lihat_semua():
     """Menampilkan semua dokumen (READ ALL)."""
     print_header("DAFTAR SEMUA DOKUMEN")
@@ -91,6 +94,7 @@ def fitur_lihat_semua():
 
 # ======================== HELPER ========================
 
+# Fungsi: Tampilkan tabel dokumen, minta ID dari user, kembalikan dokumen yang dipilih
 def _pick_document(prompt="  Masukkan ID dokumen: "):
     """Tampilkan tabel dokumen, minta ID, validasi, kembalikan doc atau None."""
     docs = manager.read_all_documents()
@@ -108,6 +112,7 @@ def _pick_document(prompt="  Masukkan ID dokumen: "):
 
 # ======================== FITUR 3: BUKA & EDIT ========================
 
+# Fungsi: Pilih dokumen lalu masuk ke mode editor
 def fitur_buka_edit():
     """Membuka dokumen dan masuk ke mode editor."""
     print_header("BUKA & EDIT DOKUMEN")
@@ -116,6 +121,7 @@ def fitur_buka_edit():
         mode_editor(doc)
 
 
+# Fungsi: Loop interaktif untuk mengedit isi dokumen, termasuk undo dan redo
 def mode_editor(doc):
     """Mode editor interaktif untuk satu dokumen."""
     while True:
@@ -164,6 +170,7 @@ def mode_editor(doc):
             pause()
 
 
+# Fungsi: Tambah baris satu per satu ke dokumen sampai user ketik "selesai"
 def tambah_baris_interaktif(doc_id):
     """Menambahkan baris secara interaktif. Ketik 'selesai' untuk berhenti."""
     print("\n  Ketik baris teks (ketik 'selesai' untuk berhenti):")
@@ -178,6 +185,7 @@ def tambah_baris_interaktif(doc_id):
         print("  [+] Baris ditambahkan.")
 
 
+# Fungsi: Minta nomor baris dan teks baru, lalu ubah isi baris tersebut
 def edit_baris_interaktif(doc):
     """Mengedit baris tertentu dalam dokumen."""
     if doc.get_line_count() == 0:
@@ -198,6 +206,7 @@ def edit_baris_interaktif(doc):
     pause()
 
 
+# Fungsi: Minta nomor baris, konfirmasi, lalu hapus baris tersebut
 def hapus_baris_interaktif(doc):
     """Menghapus baris tertentu dalam dokumen."""
     if doc.get_line_count() == 0:
@@ -219,6 +228,7 @@ def hapus_baris_interaktif(doc):
 
 # ======================== FITUR 4: UBAH JUDUL ========================
 
+# Fungsi: Pilih dokumen lalu ubah judulnya
 def fitur_ubah_judul():
     """Mengubah judul dokumen (UPDATE)."""
     print_header("UBAH JUDUL DOKUMEN")
@@ -236,6 +246,7 @@ def fitur_ubah_judul():
 
 # ======================== FITUR 5: HAPUS DOKUMEN ========================
 
+# Fungsi: Pilih dokumen, minta konfirmasi, lalu hapus secara permanen
 def fitur_hapus_dokumen():
     """Menghapus dokumen (DELETE)."""
     print_header("HAPUS DOKUMEN")
@@ -253,6 +264,7 @@ def fitur_hapus_dokumen():
 
 # ======================== FITUR 6: CARI DOKUMEN ========================
 
+# Fungsi: Cari dokumen berdasarkan judul atau isi konten
 def fitur_cari_dokumen():
     """Fitur pencarian dokumen (SEARCHING)."""
     print_header("CARI DOKUMEN")
@@ -300,6 +312,7 @@ _SORT_OPTIONS = [
 ]
 
 
+# Fungsi: Tampilkan opsi urutan, minta pilihan, lalu tampilkan hasil pengurutan
 def fitur_urutkan_dokumen():
     """Fitur pengurutan dokumen (SORTING)."""
     print_header("URUTKAN DOKUMEN")
@@ -322,6 +335,7 @@ def fitur_urutkan_dokumen():
 
 # ======================== FITUR 8 & 9: UNDO / REDO ========================
 
+# Fungsi: Panggil undo dari manager, tampilkan pesan, lalu simpan otomatis
 def fitur_undo():
     """Membatalkan aksi terakhir."""
     action, msg = manager.undo()
@@ -330,6 +344,7 @@ def fitur_undo():
         simpan_otomatis()
 
 
+# Fungsi: Panggil redo dari manager, tampilkan pesan, lalu simpan otomatis
 def fitur_redo():
     """Mengulang aksi yang telah di-undo."""
     action, msg = manager.redo()
@@ -340,6 +355,7 @@ def fitur_redo():
 
 # ======================== FITUR 10: RIWAYAT ========================
 
+# Fungsi: Tampilkan seluruh riwayat aksi yang tersimpan di stack undo
 def fitur_riwayat():
     """Menampilkan riwayat aksi (isi Stack)."""
     print_header("RIWAYAT AKSI (STACK)")
@@ -383,6 +399,7 @@ def fitur_riwayat():
 
 # ======================== FITUR 11: EKSPOR TXT ========================
 
+# Fungsi: Pilih dokumen lalu ekspor seluruh isinya ke file TXT
 def fitur_ekspor_txt():
     """Mengekspor dokumen ke file TXT."""
     print_header("EKSPOR DOKUMEN KE TXT")
@@ -395,12 +412,14 @@ def fitur_ekspor_txt():
 
 # ======================== UTILITAS ========================
 
+# Fungsi: Simpan semua dokumen ke CSV tanpa interaksi user
 def simpan_otomatis():
     """Menyimpan data secara otomatis ke file CSV."""
     docs = manager.read_all_documents()
     save_documents(docs)
 
 
+# Fungsi: Muat data dari CSV ke linked list saat program pertama kali dibuka
 def muat_data_awal():
     """Memuat data dari file CSV saat aplikasi dimulai."""
     docs, msg = load_documents()
@@ -426,6 +445,7 @@ _MENU_ACTIONS = {
 }
 
 
+# Fungsi: Titik masuk utama program, tampilkan sambutan lalu jalankan loop menu
 def main():
     """Fungsi utama aplikasi."""
     clear_screen()
