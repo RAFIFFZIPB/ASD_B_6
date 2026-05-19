@@ -98,20 +98,30 @@ class DocumentManager:
         self.undo_stack = Stack()      # Struktur data 2: Stack (untuk undo)
         self.redo_stack = Stack()      # Stack tambahan untuk redo
 
+    # ======================== PRIVATE HELPERS ========================
+
+    def _get_doc(self, doc_id):
+        """Mendapatkan dokumen berdasarkan ID."""
+        _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
+        return doc
+
+    def _record(self, action):
+        """Menyimpan aksi ke undo stack dan mengosongkan redo stack."""
+        self.undo_stack.push(action)
+        self.redo_stack.clear()
+
     # ======================== CRUD ========================
 
     def create_document(self, title):
         """Membuat dokumen baru (CREATE)."""
         doc = Document(title=title)
         self.documents.append(doc)
-        self.undo_stack.push(("create", self.documents.size() - 1, doc.to_dict()))
-        self.redo_stack.clear()
+        self._record(("create", self.documents.size() - 1, doc.to_dict()))
         return doc
 
     def read_document(self, doc_id):
         """Membaca dokumen berdasarkan ID (READ)."""
-        index, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-        return index, doc
+        return self.documents.find(lambda d: d.doc_id == doc_id)
 
     def read_all_documents(self):
         """Membaca semua dokumen (READ ALL)."""
@@ -119,14 +129,13 @@ class DocumentManager:
 
     def update_document_title(self, doc_id, new_title):
         """Memperbarui judul dokumen (UPDATE)."""
-        index, doc = self.documents.find(lambda d: d.doc_id == doc_id)
+        doc = self._get_doc(doc_id)
         if doc is None:
             return False
         old_title = doc.title
         doc.title = new_title
         doc._update_timestamp()
-        self.undo_stack.push(("update_title", doc_id, old_title, new_title))
-        self.redo_stack.clear()
+        self._record(("update_title", doc_id, old_title, new_title))
         return True
 
     def delete_document(self, doc_id):
@@ -134,157 +143,112 @@ class DocumentManager:
         index, doc = self.documents.find(lambda d: d.doc_id == doc_id)
         if doc is None:
             return False
-        doc_data = doc.to_dict()
+        self._record(("delete", index, doc.to_dict()))
         self.documents.delete_at(index)
-        self.undo_stack.push(("delete", index, doc_data))
-        self.redo_stack.clear()
         return True
 
     # ======================== EDITOR ========================
 
     def add_line_to_doc(self, doc_id, text):
         """Menambahkan baris ke dokumen."""
-        _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
+        doc = self._get_doc(doc_id)
         if doc is None:
             return False
         doc.add_line(text)
-        self.undo_stack.push(("add_line", doc_id, len(doc.lines) - 1, text))
-        self.redo_stack.clear()
+        self._record(("add_line", doc_id, len(doc.lines) - 1, text))
         return True
 
     def edit_line_in_doc(self, doc_id, line_index, new_text):
         """Mengubah baris tertentu dalam dokumen."""
-        _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
+        doc = self._get_doc(doc_id)
         if doc is None:
             return False
         old_text = doc.update_line(line_index, new_text)
         if old_text is None:
             return False
-        self.undo_stack.push(("edit_line", doc_id, line_index, old_text, new_text))
-        self.redo_stack.clear()
+        self._record(("edit_line", doc_id, line_index, old_text, new_text))
         return True
 
     def delete_line_in_doc(self, doc_id, line_index):
         """Menghapus baris tertentu dalam dokumen."""
-        _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
+        doc = self._get_doc(doc_id)
         if doc is None:
             return False
         removed = doc.remove_line(line_index)
         if removed is None:
             return False
-        self.undo_stack.push(("delete_line", doc_id, line_index, removed))
-        self.redo_stack.clear()
+        self._record(("delete_line", doc_id, line_index, removed))
         return True
 
     # ======================== UNDO / REDO ========================
+
+    def _apply_action(self, action, forward):
+        """Menerapkan aksi (forward=True untuk redo, False untuk undo)."""
+        t = action[0]
+        label = "Redo" if forward else "Undo"
+
+        if t == "create":
+            if forward:
+                doc = Document.from_dict(action[2])
+                self.documents.insert_at(action[1], doc)
+                return f"Redo: Dokumen '{doc.title}' dibuat kembali."
+            self.documents.delete_at(action[1])
+            return "Undo: Pembuatan dokumen dibatalkan."
+
+        if t == "delete":
+            if forward:
+                self.documents.delete_at(action[1])
+                return "Redo: Dokumen dihapus kembali."
+            doc = Document.from_dict(action[2])
+            self.documents.insert_at(action[1], doc)
+            return f"Undo: Dokumen '{doc.title}' dikembalikan."
+
+        doc = self._get_doc(action[1])
+        if doc is None:
+            return f"{label}: Dokumen tidak ditemukan."
+
+        if t == "update_title":
+            doc.title = action[3] if forward else action[2]
+            return f"{label}: Judul diubah ke '{doc.title}'."
+
+        if t == "add_line":
+            if forward:
+                doc.add_line(action[3])
+                return f"{label}: Baris ditambahkan kembali."
+            doc.remove_line(action[2])
+            return f"{label}: Baris terakhir dihapus."
+
+        if t == "edit_line":
+            doc.update_line(action[2], action[4] if forward else action[3])
+            status = "diubah kembali" if forward else "dikembalikan"
+            return f"{label}: Baris {action[2] + 1} {status}."
+
+        if t == "delete_line":
+            if forward:
+                doc.remove_line(action[2])
+                return f"{label}: Baris dihapus kembali."
+            doc.lines.insert(action[2], action[3])
+            return f"{label}: Baris '{action[3]}' dikembalikan."
+
+        return ""
 
     def undo(self):
         """Membatalkan aksi terakhir menggunakan Stack (LIFO)."""
         if self.undo_stack.is_empty():
             return None, "Tidak ada aksi yang bisa di-undo."
-
         action = self.undo_stack.pop()
-        action_type = action[0]
-        message = ""
-
-        if action_type == "create":
-            # Undo pembuatan dokumen -> hapus dokumen
-            idx = action[1]
-            self.documents.delete_at(idx)
-            message = "Undo: Pembuatan dokumen dibatalkan."
-
-        elif action_type == "delete":
-            # Undo penghapusan -> kembalikan dokumen
-            idx, doc_data = action[1], action[2]
-            doc = Document.from_dict(doc_data)
-            self.documents.insert_at(idx, doc)
-            message = f"Undo: Dokumen '{doc.title}' dikembalikan."
-
-        elif action_type == "update_title":
-            # Undo perubahan judul -> kembalikan judul lama
-            doc_id, old_title, _ = action[1], action[2], action[3]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.title = old_title
-                message = f"Undo: Judul dikembalikan ke '{old_title}'."
-
-        elif action_type == "add_line":
-            # Undo penambahan baris -> hapus baris
-            doc_id, line_idx = action[1], action[2]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.remove_line(line_idx)
-                message = "Undo: Baris terakhir dihapus."
-
-        elif action_type == "edit_line":
-            # Undo edit baris -> kembalikan teks lama
-            doc_id, line_idx, old_text = action[1], action[2], action[3]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.update_line(line_idx, old_text)
-                message = f"Undo: Baris {line_idx + 1} dikembalikan."
-
-        elif action_type == "delete_line":
-            # Undo hapus baris -> sisipkan kembali
-            doc_id, line_idx, text = action[1], action[2], action[3]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.lines.insert(line_idx, text)
-                message = f"Undo: Baris '{text}' dikembalikan."
-
+        msg = self._apply_action(action, forward=False)
         self.redo_stack.push(action)
-        return action, message
+        return action, msg
 
     def redo(self):
         """Mengulang aksi yang telah di-undo."""
         if self.redo_stack.is_empty():
             return None, "Tidak ada aksi yang bisa di-redo."
-
         action = self.redo_stack.pop()
-        action_type = action[0]
-        message = ""
-
-        if action_type == "create":
-            doc_data = action[2]
-            doc = Document.from_dict(doc_data)
-            self.documents.insert_at(action[1], doc)
-            message = f"Redo: Dokumen '{doc.title}' dibuat kembali."
-
-        elif action_type == "delete":
-            idx = action[1]
-            self.documents.delete_at(idx)
-            message = "Redo: Dokumen dihapus kembali."
-
-        elif action_type == "update_title":
-            doc_id, _, new_title = action[1], action[2], action[3]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.title = new_title
-                message = f"Redo: Judul diubah ke '{new_title}'."
-
-        elif action_type == "add_line":
-            doc_id, _, text = action[1], action[2], action[3]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.add_line(text)
-                message = "Redo: Baris ditambahkan kembali."
-
-        elif action_type == "edit_line":
-            doc_id, line_idx, _, new_text = action[1], action[2], action[3], action[4]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.update_line(line_idx, new_text)
-                message = f"Redo: Baris {line_idx + 1} diubah kembali."
-
-        elif action_type == "delete_line":
-            doc_id, line_idx = action[1], action[2]
-            _, doc = self.documents.find(lambda d: d.doc_id == doc_id)
-            if doc:
-                doc.remove_line(line_idx)
-                message = "Redo: Baris dihapus kembali."
-
+        msg = self._apply_action(action, forward=True)
         self.undo_stack.push(action)
-        return action, message
+        return action, msg
 
     def get_undo_history(self):
         """Mengembalikan riwayat undo sebagai list."""

@@ -85,26 +85,31 @@ def fitur_lihat_semua():
     print_document_table(docs)
 
 
+# ======================== HELPER ========================
+
+def _pick_document(prompt="  Masukkan ID dokumen: "):
+    """Tampilkan tabel dokumen, minta ID, validasi, kembalikan doc atau None."""
+    docs = manager.read_all_documents()
+    if not docs:
+        print("  (Belum ada dokumen.)")
+        return None
+    print_document_table(docs)
+    print()
+    doc_id = input_integer(prompt, min_val=1)
+    _, doc = manager.read_document(doc_id)
+    if doc is None:
+        print(f"  [!] Dokumen dengan ID {doc_id} tidak ditemukan.")
+    return doc
+
+
 # ======================== FITUR 3: BUKA & EDIT ========================
 
 def fitur_buka_edit():
     """Membuka dokumen dan masuk ke mode editor."""
     print_header("BUKA & EDIT DOKUMEN")
-    docs = manager.read_all_documents()
-    if not docs:
-        print("  (Belum ada dokumen. Buat dulu!)")
-        return
-
-    print_document_table(docs)
-    print()
-    doc_id = input_integer("  Masukkan ID dokumen yang ingin dibuka: ", min_val=1)
-    _, doc = manager.read_document(doc_id)
-
-    if doc is None:
-        print(f"  [!] Dokumen dengan ID {doc_id} tidak ditemukan.")
-        return
-
-    mode_editor(doc)
+    doc = _pick_document("  Masukkan ID dokumen yang ingin dibuka: ")
+    if doc:
+        mode_editor(doc)
 
 
 def mode_editor(doc):
@@ -213,22 +218,12 @@ def hapus_baris_interaktif(doc):
 def fitur_ubah_judul():
     """Mengubah judul dokumen (UPDATE)."""
     print_header("UBAH JUDUL DOKUMEN")
-    docs = manager.read_all_documents()
-    if not docs:
-        print("  (Belum ada dokumen.)")
-        return
-
-    print_document_table(docs)
-    print()
-    doc_id = input_integer("  Masukkan ID dokumen: ", min_val=1)
-    _, doc = manager.read_document(doc_id)
+    doc = _pick_document("  Masukkan ID dokumen: ")
     if doc is None:
-        print(f"  [!] Dokumen dengan ID {doc_id} tidak ditemukan.")
         return
-
     print(f"  Judul saat ini: {doc.title}")
     new_title = input_non_empty("  Masukkan judul baru: ")
-    if manager.update_document_title(doc_id, new_title):
+    if manager.update_document_title(doc.doc_id, new_title):
         print(f"  [OK] Judul berhasil diubah menjadi '{new_title}'.")
         simpan_otomatis()
     else:
@@ -240,22 +235,12 @@ def fitur_ubah_judul():
 def fitur_hapus_dokumen():
     """Menghapus dokumen (DELETE)."""
     print_header("HAPUS DOKUMEN")
-    docs = manager.read_all_documents()
-    if not docs:
-        print("  (Belum ada dokumen.)")
-        return
-
-    print_document_table(docs)
-    print()
-    doc_id = input_integer("  Masukkan ID dokumen yang ingin dihapus: ", min_val=1)
-    _, doc = manager.read_document(doc_id)
+    doc = _pick_document("  Masukkan ID dokumen yang ingin dihapus: ")
     if doc is None:
-        print(f"  [!] Dokumen dengan ID {doc_id} tidak ditemukan.")
         return
-
     print(f"  Dokumen: {doc.title} ({doc.get_line_count()} baris)")
     if input_yes_no("  Yakin ingin menghapus? (y/n): "):
-        if manager.delete_document(doc_id):
+        if manager.delete_document(doc.doc_id):
             print("  [OK] Dokumen berhasil dihapus.")
             simpan_otomatis()
         else:
@@ -301,6 +286,16 @@ def fitur_cari_dokumen():
 
 # ======================== FITUR 7: URUTKAN DOKUMEN ========================
 
+_SORT_OPTIONS = [
+    ("Judul (A-Z)",                   sort_by_title,      {"ascending": True}),
+    ("Judul (Z-A)",                   sort_by_title,      {"ascending": False}),
+    ("Tanggal Dibuat (Terlama)",      sort_by_date,       {"ascending": True}),
+    ("Tanggal Dibuat (Terbaru)",      sort_by_date,       {"ascending": False}),
+    ("Jumlah Baris (Sedikit-Banyak)", sort_by_line_count, {"ascending": True}),
+    ("Jumlah Baris (Banyak-Sedikit)", sort_by_line_count, {"ascending": False}),
+]
+
+
 def fitur_urutkan_dokumen():
     """Fitur pengurutan dokumen (SORTING)."""
     print_header("URUTKAN DOKUMEN")
@@ -308,40 +303,16 @@ def fitur_urutkan_dokumen():
     if not docs:
         print("  (Belum ada dokumen.)")
         return
-
-    print("  [1] Urutkan berdasarkan Judul (A-Z)")
-    print("  [2] Urutkan berdasarkan Judul (Z-A)")
-    print("  [3] Urutkan berdasarkan Tanggal Dibuat (Terlama)")
-    print("  [4] Urutkan berdasarkan Tanggal Dibuat (Terbaru)")
-    print("  [5] Urutkan berdasarkan Jumlah Baris (Sedikit-Banyak)")
-    print("  [6] Urutkan berdasarkan Jumlah Baris (Banyak-Sedikit)")
+    for i, (label, _, _) in enumerate(_SORT_OPTIONS, 1):
+        print(f"  [{i}] Urutkan berdasarkan {label}")
     print("  [0] Kembali")
     print_separator()
-
-    pilihan = input_integer("  Pilih: ", min_val=0, max_val=6)
+    pilihan = input_integer("  Pilih: ", min_val=0, max_val=len(_SORT_OPTIONS))
     if pilihan == 0:
         return
-
-    sorted_docs = []
-    if pilihan == 1:
-        sorted_docs = sort_by_title(docs, ascending=True)
-        print("\n  Hasil pengurutan (Judul A-Z):")
-    elif pilihan == 2:
-        sorted_docs = sort_by_title(docs, ascending=False)
-        print("\n  Hasil pengurutan (Judul Z-A):")
-    elif pilihan == 3:
-        sorted_docs = sort_by_date(docs, ascending=True)
-        print("\n  Hasil pengurutan (Terlama):")
-    elif pilihan == 4:
-        sorted_docs = sort_by_date(docs, ascending=False)
-        print("\n  Hasil pengurutan (Terbaru):")
-    elif pilihan == 5:
-        sorted_docs = sort_by_line_count(docs, ascending=True)
-        print("\n  Hasil pengurutan (Baris: Sedikit-Banyak):")
-    elif pilihan == 6:
-        sorted_docs = sort_by_line_count(docs, ascending=False)
-        print("\n  Hasil pengurutan (Baris: Banyak-Sedikit):")
-
+    label, fn, kwargs = _SORT_OPTIONS[pilihan - 1]
+    sorted_docs = fn(docs, **kwargs)
+    print(f"\n  Hasil pengurutan ({label}):")
     print_document_table(sorted_docs)
 
 
@@ -411,19 +382,9 @@ def fitur_riwayat():
 def fitur_ekspor_txt():
     """Mengekspor dokumen ke file TXT."""
     print_header("EKSPOR DOKUMEN KE TXT")
-    docs = manager.read_all_documents()
-    if not docs:
-        print("  (Belum ada dokumen.)")
-        return
-
-    print_document_table(docs)
-    print()
-    doc_id = input_integer("  Masukkan ID dokumen yang ingin diekspor: ", min_val=1)
-    _, doc = manager.read_document(doc_id)
+    doc = _pick_document("  Masukkan ID dokumen yang ingin diekspor: ")
     if doc is None:
-        print(f"  [!] Dokumen dengan ID {doc_id} tidak ditemukan.")
         return
-
     success, msg = export_document_to_txt(doc)
     print(f"  {'[OK]' if success else '[!]'} {msg}")
 
@@ -446,6 +407,21 @@ def muat_data_awal():
 
 # ======================== MAIN LOOP ========================
 
+_MENU_ACTIONS = {
+    1: fitur_buat_dokumen,
+    2: fitur_lihat_semua,
+    3: fitur_buka_edit,
+    4: fitur_ubah_judul,
+    5: fitur_hapus_dokumen,
+    6: fitur_cari_dokumen,
+    7: fitur_urutkan_dokumen,
+    8: fitur_undo,
+    9: fitur_redo,
+    10: fitur_riwayat,
+    11: fitur_ekspor_txt,
+}
+
+
 def main():
     """Fungsi utama aplikasi."""
     clear_screen()
@@ -454,8 +430,6 @@ def main():
     print("  Kelompok 6 - Project Algoritma")
     print_separator("=")
     print()
-
-    # Muat data dari file
     muat_data_awal()
     pause()
 
@@ -463,38 +437,15 @@ def main():
         clear_screen()
         menu_utama()
         pilihan = input_integer("  Pilih menu: ", min_val=1, max_val=12)
-
-        if pilihan == 1:
-            fitur_buat_dokumen()
-        elif pilihan == 2:
-            fitur_lihat_semua()
-        elif pilihan == 3:
-            fitur_buka_edit()
-            continue  # Skip pause karena editor punya pause sendiri
-        elif pilihan == 4:
-            fitur_ubah_judul()
-        elif pilihan == 5:
-            fitur_hapus_dokumen()
-        elif pilihan == 6:
-            fitur_cari_dokumen()
-        elif pilihan == 7:
-            fitur_urutkan_dokumen()
-        elif pilihan == 8:
-            fitur_undo()
-        elif pilihan == 9:
-            fitur_redo()
-        elif pilihan == 10:
-            fitur_riwayat()
-        elif pilihan == 11:
-            fitur_ekspor_txt()
-        elif pilihan == 12:
+        if pilihan == 12:
             simpan_otomatis()
             print_header("TERIMA KASIH")
             print("  Data telah disimpan. Sampai jumpa!")
             print_separator("=")
             break
-
-        pause()
+        _MENU_ACTIONS[pilihan]()
+        if pilihan != 3:  # editor punya pause sendiri
+            pause()
 
 
 if __name__ == "__main__":
