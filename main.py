@@ -46,17 +46,21 @@ manager = DocumentManager()
 def menu_utama():
     """Menampilkan menu utama aplikasi."""
     print_header("EDITOR TEKS SEDERHANA")
-    print("  [1] Buat Dokumen Baru")
-    print("  [2] Lihat Semua Dokumen")
-    print("  [3] Buka & Edit Dokumen")
-    print("  [4] Ubah Judul Dokumen")
-    print("  [5] Hapus Dokumen")
-    print("  [6] Cari Dokumen")
-    print("  [7] Urutkan Dokumen")
-    print("  [8] Undo Aksi Terakhir")
-    print("  [9] Redo Aksi")
-    print("  [10] Lihat Riwayat Aksi")
-    print("  [11] Ekspor Dokumen ke TXT")
+
+    W1, W2 = 22, 16
+    rows = [
+        ("  DOKUMEN",           "CARI & URUT",   "RIWAYAT"),
+        ("  " + "-" * 14,       "-" * 11,        "-" * 7),
+        ("  [1]  Buat Baru",    "[7]  Cari",     "[9]  Undo"),
+        ("  [2]  Lihat Semua",  "[8]  Urutkan",  "[10] Redo"),
+        ("  [3]  Buka & Edit",  "",              "[11] Riwayat"),
+        ("  [4]  Ubah Judul",   "",              ""),
+        ("  [5]  Hapus",        "",              ""),
+        ("  [6]  Ekspor TXT",   "",              ""),
+    ]
+    for c1, c2, c3 in rows:
+        print(f"{c1:<{W1}}{c2:<{W2}}{c3}")
+    print_separator()
     print("  [12] Simpan & Keluar")
     print_separator("=")
 
@@ -413,12 +417,12 @@ _MENU_ACTIONS = {
     3: fitur_buka_edit,
     4: fitur_ubah_judul,
     5: fitur_hapus_dokumen,
-    6: fitur_cari_dokumen,
-    7: fitur_urutkan_dokumen,
-    8: fitur_undo,
-    9: fitur_redo,
-    10: fitur_riwayat,
-    11: fitur_ekspor_txt,
+    6: fitur_ekspor_txt,
+    7: fitur_cari_dokumen,
+    8: fitur_urutkan_dokumen,
+    9: fitur_undo,
+    10: fitur_redo,
+    11: fitur_riwayat,
 }
 
 
